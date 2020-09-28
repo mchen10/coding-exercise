@@ -83,10 +83,11 @@ class RewardsSystem:
 
       if customer_id is not None:
         reward_points_used = min(reward_points_used, customer_rewards[customer_id])
-        total_spent -= reward_points_used;
-        customer_amount_spent[customer_id] += total_spent
+        before_rewards = total_spent
+        after_rewards = total_spent - min(before_rewards, reward_points_used);
+        customer_amount_spent[customer_id] += after_rewards
 
-        self.customer_rewards[customer_id] -= rewards_points_used
+        self.customer_rewards[customer_id] -= min(before_rewards, reward_points_used)
 
     update_customer_rewards(customer_amount_spent)
     return (item_purchased, customer_amount_spent, error)
@@ -99,5 +100,3 @@ class RewardsSystem:
       rewards_points =  customer_amount_spent[customer_id] // rewards_constant
 
       self.customer_rewards[customer_id] += rewards_points
-
-
