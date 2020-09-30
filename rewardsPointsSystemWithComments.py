@@ -42,9 +42,9 @@ class Item:
 from collections import defaultdict    
 
 class RewardsSystem:
-  REWARDS_RATIO_BELOW = 18 
+  REWARDS_RATIO_BELOW = 18 #what for?
   REWARDS_CUTOFF = 250
-  ERROR_LOG = [] 
+  ERROR_LOG = [] #(7) missing list of error logs
 
   def __init__(self):
     self.rewards_points = defaultdict(int)
@@ -55,37 +55,64 @@ class RewardsSystem:
 
     for log_entry in log:
       customer_id = log_entry[0]
-      customer_reward_points_used = log_entry[1] 
-      customer_items_purchased = log_entry[2] 
+      customer_reward_points_used = log_entry[1] #(1) naming: customer reward points 
+      customer_items_purchased = log_entry[2] #customer purchased items
 
       if customer_items_purchased == None:
       	self.ERROR_LOG.append(log_entry)
       	continue
 
       if customer_reward_points_used == None:
-      	customer_reward_points_used = 0 
+      	customer_reward_points_used = 0 # (10) if no reward points -> 0
 
-      # Calculate amount spent and update items purchased
+      # if not customer_id: # if customer_id == None ??? move to relevan section only(2.1)
 	  total_spent = 0
 	  for item in customer_items_purchased:
-	    total_spent += item.item_price 
+	    total_spent += item.item_price # (3) iterate all items and add, ignore id, assuming list contains duplicates and not counts
+	    #self.items_purchased[item.itemId] = self.items_purchased.get(item.itemId, 0) + 1 #item.item_price # (9) Should be + 1 
+	    #(14)  user helper method instead
 	    update_items_purchased(self, item)
+	      # Update items sold
+	      # for purchase in items_purchased: # (8) No need extra for loop
+	        #self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
 
-      
-      if cusomter_id != None: 
+	      # items_purchased = len(items_purchased) == 0 (4) just check if None
+	      # if items_purchased: (5) check before 
+	      #   raise ValueError('Items purchased were not recorded.') (6) should add to error log not raise
+
+      # else: #(11) remove else need to continue logic
+      if cusomter_id != None: # (2.2)
 
         # Subtract rewards points used from customer
         self.rewards_points[customer_id] -= customer_reward_points_used
+
+        # total_spent = 0 (12.0) extra
+        # for item in items_purchased:
+        #   total_spent += item.itemId * item.item_price
+      
         amount_spent[customer_id] = amount_spent.get(customer_id, 0) + total_spent
+
+        # Update items sold
+        # for purchase in items_purchased: (12.1) extra as well
+        #   self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
+
         print(self.reward_points)
 
-    # At end of day, award reward points back to customers based on how much they spent 
+    # At end of day, award reward points back to customers based on how much they spent (13) can modularize this 
     update_rewards(self, amount_spent)
+    # for customer_id in amount_spent:
+    #   # Calculate rewards points received
+    #   rewards_points = amount_spent[customer_id] // RewardsSystem.REWARDS_RATIO_BELOW
+    #   if amount_spent > RewardsSystem.REWARDS_CUTOFF:
+    #     rewards_points =  amount_spent[customer_id] // 17 
 
+    #   # Update customer rewards points
+    #   self.rewards_points[customer_id] += rewards_points
 
+  # (15) rewrite method, bad naming from get_items_purchased to update_items_purchased, bad logic
   def update_items_purchased(self, item_id):
   	self.items_purchased[item.itemId] = self.items_purchased.get(item.itemId, 0) + 1
-    
+    # return self.items_purchased[item_id]
 
   def update_rewards(self, amount_spent):
   	for customer_id in amount_spent:
