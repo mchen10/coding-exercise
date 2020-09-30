@@ -47,17 +47,16 @@ class RewardsSystem:
 
   def __init__(self):
     self.rewards_points = defaultdict(int)
-    self.items_purchased = defaultdict(int)
+    self.overall_items_purchased = defaultdict(int)
 
   def process_log(self, log):
-    amount_spent = defaultdict(int)
-
+    
     for log_entry in log:
       customer_id = log_entry[0]
       reward_points_used = log_entry[1]
       items_purchased = log_entry[2]
 
-      #Calculates total amount spent
+      #Calculates total amount spent and Updates Item sold
       total_spent = totalSpentAndUpdatingItems(self, items_purchased)
 
       if not customer_id:
@@ -65,28 +64,29 @@ class RewardsSystem:
           raise ValueError('Items purchased were not recorded.')
       else:
         # Subtract rewards points used from customer
-        self.rewards_points[customer_id] -= reward_points_used
+        if rewards_points[customer_id] != 0:
+          self.rewards_points[customer_id] -= reward_points_used
         print(self.reward_points)
-
+    
+    amount_spent = defaultdict(int)
     # At end of day, award reward points back to customers based on how much they spent
-    for customer_id in amount_spent:
-      # Calculate rewards points received
-      if amount_spent > RewardsSystem.REWARDS_CUTOFF:
-        rewards_points =  amount_spent[customer_id] // RewardsSystem.NEW_REWARDS_RATIO_BELOW
+    for customer in amount_spent:
+      # Calculate rewards points received and Updates customer  reward points
+      if amount_spent[customer] > RewardsSystem.REWARDS_CUTOFF:
+        self.rewards_points[customer] =  amount_spent[customer] // RewardsSystem.NEW_REWARDS_RATIO_BELOW
       else: 
-        rewards_points = amount_spent[customer_id] // RewardsSystem.REWARDS_RATIO_BELOW
-
-      # Update customer rewards points
-      self.rewards_points[customer_id] += rewards_points
+        self.rewards_points[customer] = amount_spent[customer] // RewardsSystem.REWARDS_RATIO_BELOW
 
   #Helper functions for process_log in calculating amount of total spent and updating items sold    
   def totalSpentAndUpdatingItems(self, items_purchased):
     total_spent = 0
     for item in items_purchased:
-      total_spent += item.itemId * item.item_price
-      #UpdatingItemsSold
-      self.items_purchased[item.itemId] = self.items_purchased.get(item.itemId, 0) + item.item_price
+      total_spent += items_purchased[item.itemId] * item.item_price
+      #Updating Items Sold
+      self.overall_items_purchased[item.itemId, 0] = self.overall_items_purchased(item.item_id, 0) + 1
+      self.overall_items_purchased[item.itemID, 1] = item.item_price
     return total_spent
 
+  #gets a specific item_purchased given an item id
   def get_items_purchased(self, item_id):
     return self.items_purchased[item_id]
