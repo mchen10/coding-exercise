@@ -58,10 +58,7 @@ class RewardsSystem:
       items_purchased = log_entry[2]
 
       #Calculates total amount spent
-      total_spent = total_spent(self, items_purchased)
-
-      #Update items sold
-      updateItemsSold(self, items_purchased)
+      total_spent = totalSpentAndUpdatingItems(self, items_purchased)
 
       if not customer_id:
         if len(items_purchased):
@@ -81,16 +78,15 @@ class RewardsSystem:
 
       # Update customer rewards points
       self.rewards_points[customer_id] += rewards_points
-  
-  def totalSpent(self, items_purchased):
+
+  #Helper functions for process_log in calculating amount of total spent and updating items sold    
+  def totalSpentAndUpdatingItems(self, items_purchased):
     total_spent = 0
     for item in items_purchased:
       total_spent += item.itemId * item.item_price
+      #UpdatingItemsSold
+      self.items_purchased[item.itemId] = self.items_purchased.get(item.itemId, 0) + item.item_price
     return total_spent
-
-  def updateItemsSold(self, items_purchased):
-    for purchase in items_purchased:
-      self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
 
   def get_items_purchased(self, item_id):
     return self.items_purchased[item_id]
