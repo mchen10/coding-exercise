@@ -1,5 +1,5 @@
+from collections import defaultdict
 """
-
 PROBLEM: Management needs to know how many of each item they are selling each 
 day and what each customer’s current reward points balance is.
 
@@ -33,14 +33,13 @@ Example- this is written in casual terms, and must be modified to actual data st
 		- Customer 1 purchased 1 banana; he used 0 rewards points
 
 """
-
+   
+#Item class 
 class Item:
   def __init__(self, itemId, item_price):
     self.itemId = itemId
     self.item_price = item_price
-
-from collections import defaultdict    
-
+  
 class RewardsSystem:
   REWARDS_RATIO_BELOW = 18
   REWARDS_CUTOFF = 250
@@ -76,10 +75,10 @@ class RewardsSystem:
     for customer_id in amount_spent:
       # Calculate rewards points received
       if amount_spent > RewardsSystem.REWARDS_CUTOFF:
-        rewards_points =  amount_spent[customer_id] // RewardsSystem.NEW_REWARDS_RATIO_BELOW
+        rewards_points =  calculateRewardPoints[RewardsSystem.NEW_REWARDS_RATIO_BELOW]
       else: 
-        rewards_points = amount_spent[customer_id] // RewardsSystem.REWARDS_RATIO_BELOW
-
+        rewards_points = calculateRewardPoints[RewardsSystem.REWARDS_RATIO_BELOW]
+        
       # Update customer rewards points
       self.rewards_points[customer_id] += rewards_points
   
@@ -92,6 +91,9 @@ class RewardsSystem:
   def updateItemsSold(self, items_purchased):
     for purchase in items_purchased:
       self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
+  
+  def calculateRewardPoints(self, rewards_ratio, customer_id, amount_spent):
+    return amount_spent[customer_id] // rewards_ratio
 
   def get_items_purchased(self, item_id):
     return self.items_purchased[item_id]
