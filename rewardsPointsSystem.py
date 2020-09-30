@@ -1,3 +1,4 @@
+from collections import defaultdict 
 """
 
 PROBLEM: Management needs to know how many of each item they are selling each 
@@ -37,9 +38,7 @@ Example- this is written in casual terms, and must be modified to actual data st
 class Item:
   def __init__(self, itemId, item_price):
     self.itemId = itemId
-    self.item_price = item_price
-
-from collections import defaultdict    
+    self.item_price = item_price   
 
 class RewardsSystem:
   REWARDS_RATIO_BELOW = 18
