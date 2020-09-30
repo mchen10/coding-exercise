@@ -24,78 +24,79 @@ If this is the case, please address them in the following ways:
 - If there is no list of items purchased, then this is an error in the system. Please add this LogEntry to a error log (a list of LogEntry called 'error')
 
 Example- this is written in casual terms, and must be modified to actual data structures
-	Items:
-		- Banana- $50
-		- Apple- $100
-	Log Entries:
-		- Customer 1 purchased 2 bananas and 1 apple; he used 100 rewards points
-		- Customer 2 purchased 1 banana and 1 apple; she used 0 rewards points
-		- Customer 1 purchased 1 banana; he used 0 rewards points
+  Items:
+    - Banana- $50
+    - Apple- $100
+  Log Entries:
+    - Customer 1 purchased 2 bananas and 1 apple; he used 100 rewards points
+    - Customer 2 purchased 1 banana and 1 apple; she used 0 rewards points
+    - Customer 1 purchased 1 banana; he used 0 rewards points
 
 """
 
+from collections import defaultdict
+
+# This class represents an item in catalog.
 class Item:
-  def __init__(self, itemId, item_price):
-    self.itemId = itemId
-    self.item_price = item_price
+  def __init__(self, id, price):
+    self.id = id
+    self.price = price
 
-from collections import defaultdict    
+# This class represents a log of a transaction.
+class Log:
+  def __init__(self, customer_id, rewards_points_used, items_purchased):
+    self.customer_id = customer_id
+    self.rewards_points_used = rewards_points_used
+    self.items_purchased = items_purchased     
 
+# This class represents a store's rewards system. 
 class RewardsSystem:
-  REWARDS_RATIO_BELOW = 18
-  REWARDS_CUTOFF = 250
+  SPENDING_CUTOFF = 250 # The threshold that determines the amount in dollars equivalent to 1 rewards point.
+  ABOVE_CUTOFF_ONSTANT = 17 # The amount in dollars equivalent to 1 rewards point if a customer has spent more than SPENDING_CUTOFF for a particular day.
+  BELOW_CUTOFF_CONSTANT = 18 # The amount in dollars equivalent to 1 rewards point if a customer has less than or equal to SPENDING_CUTOFF for a particular day.
 
   def __init__(self):
-    self.rewards_points = defaultdict(int)
-    self.items_purchased = defaultdict(int)
+    self.customer_rewards = defaultdict(int)
 
-  def process_log(self, log):
-    amount_spent = defaultdict(int)
+  # This function processes all the logs for a particular day.
+  # It returns a tuple containing a mapping between Items to their bought frequencies, a mapping between customers to their respective amounts spent and a list of invalid logs for a particular day.
+  # 'daily_logs' is a list of Logs documented for a particular day.
+  def process_logs(self, daily_logs):
+    item_purchased_count = defaultdict(int)
+    customer_amount_spent = defaultdict(int)
+    error = []
 
-    for log_entry in log:
-      customer_id = log_entry[0]
-      reward_points_used = log_entry[1]
-      items_purchased = log_entry[2]
+    for log in daily_logs:
 
-      if not customer_id:
-        total_spent = 0
-        for item in items_purchased:
-          total_spent += item.itemId * item.item_price
+      if log.items_purchased is None:
+        error.append(log)
+        continue
 
-          # Update items sold
-          for purchase in items_purchased:
-            self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
+      customer_id = log.customer_id
+      rewards_points_used = log.rewards_points_used if (log.rewards_points_used is not None && log.rewards_points_used > 0) else 0
+      items_purchased = log.items_purchased
 
-          items_purchased = len(items_purchased) == 0
-          if items_purchased:
-            raise ValueError('Items purchased were not recorded.')
+      total_spent = 0
+      for item in items_purchased:
+        total_spent += item.price
+        item_purchased_count[item.id] += 1
 
-      else:
+      if customer_id is not None:
+        reward_points_used = min(reward_points_used, customer_rewards[customer_id])
+        before_rewards = total_spent
+        after_rewards = total_spent - min(before_rewards, reward_points_used);
+        customer_amount_spent[customer_id] += after_rewards
 
-        # Subtract rewards points used from customer
-        self.rewards_points[customer_id] -= reward_points_used
+        self.customer_rewards[customer_id] -= min(before_rewards, reward_points_used)
 
-        total_spent = 0
-        for item in items_purchased:
-          total_spent += item.itemId * item.item_price
+    update_customer_rewards(customer_amount_spent)
+    return (item_purchased, customer_amount_spent, error)
 
-        amount_spent[customer_id] = amount_spent.get(customer_id, 0) + total_spent
+  # This function updates the rewards system.
+  # 'customer_amount_spent' is a mapping between customers to their respective amounts spent for a particular day.
+  def update_customer_rewards(self, customer_amount_spent):
+    for customer_id in customer_amount_spent:
+      rewards_constant = ABOVE_CUTOFF_ONSTANT if customer_amount_spent[customer_id] > SPENDING_CUTOFF else BELOW_CUTOFF_CONSTANT
+      rewards_points =  customer_amount_spent[customer_id] // rewards_constant
 
-        # Update items sold
-        for purchase in items_purchased:
-          self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
-
-        print(self.reward_points)
-
-    # At end of day, award reward points back to customers based on how much they spent
-    for customer_id in amount_spent:
-      # Calculate rewards points received
-      rewards_points = amount_spent[customer_id] // RewardsSystem.REWARDS_RATIO_BELOW
-      if amount_spent > RewardsSystem.REWARDS_CUTOFF:
-        rewards_points =  amount_spent[customer_id] // 17 
-
-      # Update customer rewards points
-      self.rewards_points[customer_id] += rewards_points
-
-  def get_items_purchased(self, item_id):
-    return self.items_purchased[item_id]
+      self.customer_rewards[customer_id] += rewards_points
