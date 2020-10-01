@@ -39,7 +39,8 @@ class Item:
   def __init__(self, itemId, item_price):
     self.itemId = itemId
     self.item_price = item_price
-  
+
+#RewardSystem class
 class RewardsSystem:
   REWARDS_RATIO_BELOW = 18
   REWARDS_CUTOFF = 250
@@ -54,16 +55,31 @@ class RewardsSystem:
 
     for log_entry in log:
       customer_id = log_entry[0]
-      reward_points_used = log_entry[1]
+      rewards_points_used = log_entry[1]
       items_purchased = log_entry[2]
 
       #Calculates total amount spent
-      total_spent = total_spent(self, items_purchased)
-
+      total_spent = self.total_spent(items_purchased)
       #Update items sold
-      updateItemsSold(self, items_purchased)
+      self.update_items_sold(items_purchased)
+      #Update rewards points
+      self.update_rewards_points(entry.customer_id, entry.reward_points_used)
 
-      if not customer_id:
+    # At end of day, award reward points back to customers based on how much they spent
+    self.award_awards_points(amount_spent)
+  
+  def total_spent(self, items_purchased):
+    total_spent = 0
+    for item in items_purchased:
+      total_spent += item.itemId * item.item_price
+    return total_spent
+
+  def update_items_sold(self, items_purchased):
+    for purchase in items_purchased:
+      self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
+
+  def update_rewards_points(self, customer_id, reward_points_used):
+    if not customer_id:
         if len(items_purchased):
           raise ValueError('Items purchased were not recorded.')
       else:
@@ -71,28 +87,18 @@ class RewardsSystem:
         self.rewards_points[customer_id] -= reward_points_used
         print(self.reward_points)
 
-    # At end of day, award reward points back to customers based on how much they spent
+  def award_awards_points(self, amount_spent):
     for customer_id in amount_spent:
       # Calculate rewards points received
       if amount_spent > RewardsSystem.REWARDS_CUTOFF:
-        rewards_points =  calculateRewardPoints[RewardsSystem.NEW_REWARDS_RATIO_BELOW]
+        rewards_points =  calculate_reward_points[RewardsSystem.NEW_REWARDS_RATIO_BELOW]
       else: 
-        rewards_points = calculateRewardPoints[RewardsSystem.REWARDS_RATIO_BELOW]
-        
+        rewards_points = calculate_reward_points[RewardsSystem.REWARDS_RATIO_BELOW]
+
       # Update customer rewards points
       self.rewards_points[customer_id] += rewards_points
   
-  def totalSpent(self, items_purchased):
-    total_spent = 0
-    for item in items_purchased:
-      total_spent += item.itemId * item.item_price
-    return total_spent
-
-  def updateItemsSold(self, items_purchased):
-    for purchase in items_purchased:
-      self.items_purchased[purchase.itemId] = self.items_purchased.get(purchase.itemId, 0) + purchase.item_price
-  
-  def calculateRewardPoints(self, rewards_ratio, customer_id, amount_spent):
+  def calculate_reward_points(self, rewards_ratio, customer_id, amount_spent):
     return amount_spent[customer_id] // rewards_ratio
 
   def get_items_purchased(self, item_id):
